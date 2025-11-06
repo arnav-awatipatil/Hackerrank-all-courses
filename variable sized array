@@ -1,0 +1,42 @@
+#include <iostream>
+#include <vector>
+
+int main() {
+    int n, q;
+    
+    // Read n (number of variable-length arrays) and q (number of queries)
+    std::cin >> n >> q;
+    
+    // Create an outer vector 'a' with 'n' elements.
+    // Each element will be a std::vector<int>.
+    std::vector<std::vector<int>> a(n);
+    
+    // Loop 'n' times to read each variable-length array
+    for (int i = 0; i < n; i++) {
+        int k;
+        
+        // Read the size 'k' of the inner array at a[i]
+        std::cin >> k;
+        
+        // Resize the inner vector a[i] to hold 'k' elements
+        a[i].resize(k);
+        
+        // Loop 'k' times to read the elements into a[i]
+        for (int j = 0; j < k; j++) {
+            std::cin >> a[i][j];
+        }
+    }
+    
+    // Loop 'q' times to process each query
+    for (int query = 0; query < q; query++) {
+        int i, j;
+        
+        // Read the query indices i and j
+        std::cin >> i >> j;
+        
+        // Access and print the element at a[i][j]
+        std::cout << a[i][j] << std::endl;
+    }
+    
+    return 0;
+}
