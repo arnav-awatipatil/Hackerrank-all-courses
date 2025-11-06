@@ -1,0 +1,25 @@
+#include <iostream>
+#include <vector>
+
+int main() {
+    int n;
+    
+    // Read the number of integers
+    std::cin >> n;
+    
+    // Create a vector of size n
+    std::vector<int> arr(n);
+    
+    // Read n integers into the vector
+    for (int i = 0; i < n; i++) {
+        std::cin >> arr[i];
+    }
+    
+    // Print the vector in reverse order
+    // Start from the last element (index n-1) and go down to 0
+    for (int i = n - 1; i >= 0; i--) {
+        std::cout << arr[i] << " ";
+    }
+    
+    return 0;
+}
