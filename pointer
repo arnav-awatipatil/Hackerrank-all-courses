@@ -1,0 +1,35 @@
+#include <cstdio>  // For scanf and printf
+#include <cstdlib> // For abs()
+
+/**
+ * @brief Modifies two integers via pointers.
+ * @param a Pointer to the first integer. Will be set to the sum (a+b).
+ * @param b Pointer to the second integer. Will be set to the absolute difference |a-b|.
+ */
+void update(int *a, int *b) {
+    // Store the original value of *a before it's overwritten
+    int original_a = *a;
+    
+    // Calculate and update *a to the sum
+    *a = *a + *b;
+    
+    // Calculate and update *b to the absolute difference
+    // using the stored original_a and the original *b
+    *b = abs(original_a - *b);
+}
+
+// The main function handles the input and output
+int main() {
+    int a, b;
+    
+    // Read the two integers
+    scanf("%d %d", &a, &b);
+    
+    // Call update, passing the addresses (pointers) of a and b
+    update(&a, &b);
+    
+    // Print the modified values
+    printf("%d\n%d", a, b);
+    
+    return 0;
+}
