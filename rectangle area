@@ -1,0 +1,59 @@
+
+/*
+ * Create classes Rectangle and RectangleArea
+ */
+#include <iostream>
+
+using namespace std;
+
+/**
+ * @class Rectangle
+ * @brief The base class to store rectangle dimensions.
+ */
+class Rectangle {
+protected:
+    int width;
+    int height;
+
+public:
+    /**
+     * @brief Displays the width and height of the rectangle.
+     */
+    void display() {
+        cout << width << " " << height << endl;
+    }
+};
+
+/**
+ * @class RectangleArea
+ * @brief The derived class to read input and calculate area.
+ * * It inherits publicly from the Rectangle class.
+ */
+class RectangleArea : public Rectangle {
+public:
+    /**
+     * @brief Reads the width and height values from stdin.
+     * It can directly modify 'width' and 'height' because
+     * they are inherited as protected members.
+     */
+    void read_input() {
+        cin >> width >> height;
+    }
+
+    /**
+     * @brief Overrides the base class display() method.
+     * This new version calculates and prints the area.
+     */
+    void display() {
+        // Print the area (width * height)
+        cout << (width * height) << endl;
+    }
+};
+
+
+/**
+ * @brief Main function to run the program.
+ * Your previous error was likely from having two main() functions.
+ * A program can only have one.
+ */
+
