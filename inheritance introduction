@@ -1,0 +1,32 @@
+#include <iostream>
+using namespace std;
+
+
+class Triangle {
+    public:
+        void triangle() {
+            cout << "I am a triangle\n";
+        }
+};
+
+
+class Isosceles : public Triangle {
+    public:
+        void isosceles() {
+            cout << "I am an isosceles triangle\n";
+        }
+        
+      
+        void triangle() {
+             cout << "In an isosceles triangle two sides are equal\n"; 
+            Triangle::triangle();
+        }
+};
+
+
+int main() {
+    Isosceles isc;
+    isc.isosceles(); // Calls Isosceles::isosceles()
+    isc.triangle();  // Calls the new Isosceles::triangle() override
+    return 0;
+}
