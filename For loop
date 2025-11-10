@@ -1,0 +1,36 @@
+#include <iostream>
+#include <string>
+
+int main() {
+    int a, b;
+    
+    // Read the start and end of the range
+    std::cin >> a >> b;
+    
+    // Array to store the English representations
+    std::string names[] = {
+        "one", "two", "three", "four", "five",
+        "six", "seven", "eight", "nine"
+    };
+    
+    // Loop through each number from a to b (inclusive)
+    for (int n = a; n <= b; n++) {
+        
+        // Case 1: n is between 1 and 9
+        if (n >= 1 && n <= 9) {
+            // Print the word from the array (n-1 for 0-based index)
+            std::cout << names[n - 1] << std::endl;
+        }
+        // Case 2: n is greater than 9 and even
+        // (We only need to check for even, as n > 9 is implied)
+        else if (n % 2 == 0) {
+            std::cout << "even" << std::endl;
+        }
+        // Case 3: n is greater than 9 and odd
+        else {
+            std::cout << "odd" << std::endl;
+        }
+    }
+    
+    return 0;
+}
