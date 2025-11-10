@@ -1,0 +1,218 @@
+// Pseudocode for the Aho-Corasick implementation with health tracking.
+
+#include <iostream>
+#include <vector>
+#include <string>
+#include <queue>
+#include <algorithm>
+
+using namespace std;
+
+// Maximum total length of genes and DNA is 2*10^6, so ~2 million states max
+const int MAX_STATES = 2000000;
+const int ALPHABET_SIZE = 26;
+
+// Structure for health value tracking
+struct HealthPair {
+    int index;
+    int value;
+    HealthPair(int i, int v) : index(i), value(v) {}
+    // Need this for sorting
+    bool operator<(const HealthPair& other) const {
+        return index < other.index;
+    }
+};
+
+struct ACState {
+    int next[ALPHABET_SIZE]; // Next state transitions
+    int link; // Failure link
+    
+    // Store all (gene_index, health_value) pairs that end at this state
+    vector<HealthPair> end_healths; 
+    
+    // Total accumulated health information from this state and its failure path
+    // TotalHealthList[u] contains all (index, health) pairs for all matching genes 
+    // at this state (including failure links).
+    vector<HealthPair> total_health_list; 
+    // Prefix sums of health values corresponding to total_health_list
+    vector<long long> prefix_health_sum; 
+
+    ACState() : link(0) {
+        fill(next, next + ALPHABET_SIZE, 0);
+    }
+};
+
+ACState ac[MAX_STATES];
+int ac_size = 1; // Start with root state at index 0
+
+// 1. Build Trie and Store Initial Healths
+void build_trie(const vector<string>& genes, const vector<int>& health, int N) {
+    for (int i = 0; i < N; ++i) {
+        int u = 0;
+        for (char c : genes[i]) {
+            int char_idx = c - 'a';
+            if (ac[u].next[char_idx] == 0) {
+                ac[u].next[char_idx] = ac_size++;
+            }
+            u = ac[u].next[char_idx];
+        }
+        // Store the original index and health value for genes ending at state u
+        ac[u].end_healths.push_back(HealthPair(i, health[i]));
+    }
+}
+
+// 2. Build Failure Links (KMP-style) and Accumulate Health Data
+void build_links_and_health_data() {
+    queue<int> q;
+    
+    // Enqueue all direct children of the root (link is 0)
+    for (int i = 0; i < ALPHABET_SIZE; ++i) {
+        if (ac[0].next[i] != 0) {
+            ac[ac[0].next[i]].link = 0;
+            q.push(ac[0].next[i]);
+        }
+    }
+
+    while (!q.empty()) {
+        int u = q.front();
+        q.pop();
+
+        // 2a. Accumulate Health Data (Crucial Step)
+        // Copy healths from the state itself
+        ac[u].total_health_list = ac[u].end_healths;
+        
+        // Merge healths from the failure link state (which already has merged data)
+        int link_state = ac[u].link;
+        const auto& link_list = ac[link_state].total_health_list;
+        
+        // Use std::merge (or a manual merge since both are sorted by index)
+        vector<HealthPair> merged_list;
+        merged_list.reserve(ac[u].total_health_list.size() + link_list.size());
+        
+        // Since both lists are sorted by index, we can merge in O(N_u + N_link) time
+        std::merge(
+            ac[u].total_health_list.begin(), ac[u].total_health_list.end(),
+            link_list.begin(), link_list.end(),
+            std::back_inserter(merged_list)
+        );
+        ac[u].total_health_list = merged_list;
+
+        // 2b. Compute Prefix Sums
+        ac[u].prefix_health_sum.resize(ac[u].total_health_list.size() + 1, 0);
+        for (size_t i = 0; i < ac[u].total_health_list.size(); ++i) {
+            ac[u].prefix_health_sum[i + 1] = ac[u].prefix_health_sum[i] + ac[u].total_health_list[i].value;
+        }
+
+        // 2c. Build Failure Links for children
+        for (int i = 0; i < ALPHABET_SIZE; ++i) {
+            int v = ac[u].next[i];
+            if (v != 0) {
+                int f = ac[u].link;
+                // Walk up the failure links until a transition 'i' is found
+                while (f != 0 && ac[f].next[i] == 0) {
+                    f = ac[f].link;
+                }
+                // Set the failure link for v
+                ac[v].link = ac[f].next[i] != 0 ? ac[f].next[i] : 0;
+                q.push(v);
+            }
+        }
+    }
+}
+
+// 3. Process a single DNA query
+long long process_dna_strand(int start, int end, const string& d) {
+    long long total_health = 0;
+    int u = 0;
+
+    for (char c : d) {
+        int char_idx = c - 'a';
+        
+        // Follow the transition or the failure link
+        while (u != 0 && ac[u].next[char_idx] == 0) {
+            u = ac[u].link;
+        }
+        u = ac[u].next[char_idx];
+        
+        // Now at state u, calculate health contribution
+        const auto& list = ac[u].total_health_list;
+        const auto& sums = ac[u].prefix_health_sum;
+
+        if (list.empty()) continue;
+
+        // Use binary search (upper_bound/lower_bound) to find the range of indices [start, end]
+
+        // Find the first element with index >= start
+        auto it_start = lower_bound(list.begin(), list.end(), HealthPair(start, 0));
+        size_t start_idx = distance(list.begin(), it_start);
+        
+        // Find the first element with index > end
+        auto it_end = upper_bound(list.begin(), list.end(), HealthPair(end, 99999999));
+        size_t end_idx = distance(list.begin(), it_end);
+
+        // The health sum for the range [start, end] is:
+        // Sums[end_idx] - Sums[start_idx]
+        // (Indices in 'sums' are 1-based for prefix sums, indices in 'list' are 0-based)
+        if (end_idx > start_idx) {
+            total_health += sums[end_idx] - sums[start_idx];
+        }
+    }
+
+    return total_health;
+}
+
+
+void find_min_max_health(const vector<string>& genes, const vector<int>& health) {
+    int N = genes.size();
+
+    // 1. Build the Automaton
+    build_trie(genes, health, N);
+
+    // 2. Build Links and Health Data (including Prefix Sums)
+    build_links_and_health_data();
+
+    int S;
+    cin >> S;
+
+    long long min_health = -1;
+    long long max_health = -1;
+
+    // 3. Process Queries
+    for (int s = 0; s < S; ++s) {
+        int start, end;
+        string d;
+        cin >> start >> end >> d;
+
+        long long current_health = process_dna_strand(start, end, d);
+
+        if (min_health == -1 || current_health < min_health) {
+            min_health = current_health;
+        }
+        if (max_health == -1 || current_health > max_health) {
+            max_health = current_health;
+        }
+    }
+    
+    // Output the result
+    cout << min_health << " " << max_health << endl;
+}
+
+
+int main() {
+    // Optimization for fast I/O
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+
+    int N;
+    cin >> N;
+
+    vector<string> genes(N);
+    for (int i = 0; i < N; ++i) cin >> genes[i];
+
+    vector<int> health(N);
+    for (int i = 0; i < N; ++i) cin >> health[i];
+
+    find_min_max_health(genes, health);
+
+    return 0;
+}
